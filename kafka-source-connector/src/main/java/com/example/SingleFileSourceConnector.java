@@ -1,39 +1,57 @@
 package com.example;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
-import org.apache.kafka.common.config.ConfigDef.Importance;
-import org.apache.kafka.common.config.ConfigDef.Type;
+import org.apache.kafka.common.config.ConfigException;
+import org.apache.kafka.connect.connector.Task;
+import org.apache.kafka.connect.source.SourceConnector;
 
-public class SingleFileSourceConnector extends AbstractConfig {
+public class SingleFileSourceConnector extends SourceConnector {
 
-    public static final String DIR_FILE_NAME = "file";
-    private static final String DIR_FILE_NAME_DEFAULT_VALUE = "./tmp/kafka.txt";
-    private static final String DIR_FILE_NAME_DOC = "읽을 파일 경로와 이름";
+    private Map<String, String> configProperties;
 
-    public static final String TOPIC_NAME = "topic";
-    private static final String TOPIC_DEFAULT_VALUE = "test";
-    private static final String TOPIC_DOC = "보낼 토픽 이름";
+    @Override
+    public void start(Map<String, String> props) {
+        this.configProperties = props;
+        try {
+            new SingleFileSourceConnectorConfig(props);
+        } catch (ConfigException e) {
+            throw new ConfigException(e.getMessage(), e);
+        }
+    }
 
-    public static ConfigDef CONFIG = new ConfigDef()
-                                        .define(
-                                                DIR_FILE_NAME,
-                                                Type.STRING,
-                                                DIR_FILE_NAME_DEFAULT_VALUE,
-                                                Importance.HIGH,
-                                                DIR_FILE_NAME_DOC
-                                        )
-                                        .define(
-                                                TOPIC_NAME,
-                                                Type.STRING,
-                                                TOPIC_DEFAULT_VALUE,
-                                                Importance.HIGH,
-                                                TOPIC_DOC
-                                        );
+    @Override
+    public Class<? extends Task> taskClass() {
+        return SingleFileSourceTask.class;
+    }
 
-    public SingleFileSourceConnector(Map<?, ?> props) {
-        super(CONFIG, props);
+    @Override
+    public List<Map<String, String>> taskConfigs(int maxTasks) {
+        List<Map<String, String>> taskConfigs = new ArrayList<>();
+        Map<String, String> taskProps = new HashMap<>();
+        taskProps.putAll(configProperties);
+        for (int i=0; i<maxTasks; i++) {
+            taskConfigs.add(taskProps);
+        }
+        return taskConfigs;
+    }
+
+    @Override
+    public void stop() {
+
+    }
+
+    @Override
+    public ConfigDef config() {
+        return SingleFileSourceConnectorConfig.CONFIG;
+    }
+
+    @Override
+    public String version() {
+        return "1.0";
     }
 }
