@@ -19,7 +19,7 @@ public class SingleFileSinkConnector extends SinkConnector {
     }
 
     @Override
-    public void start(Map<String, String> props) {ㅎ
+    public void start(Map<String, String> props) {
         this.configProperties = props;
         try {
             new SingleFileSinkConnectorConfig(props);
