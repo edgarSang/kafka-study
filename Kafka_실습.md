@@ -351,6 +351,16 @@ bin/kafka-console-producer.sh --bootstrap-server broker01:9092 --topic stream_lo
 bin/kafka-console-consumer.sh --bootstrap-server broker01:9092 --topic stream_log_copy --from-beginning
 ```
 
+
+## 3.6.1 카프카 커넥터
+```bash
+touch ./test.txt
+# config 
+bin/connect-standalone.sh config/connect-standalone.properties config/connect-file-source.properties
+curl -X DELETE http://localhost:8083/connectors/local-file-source
+curl -X GET http://localhost:8083/connectors/
+```
+
 -------
 # TROUBLE Shooting
 1.로컬에서 kafka-broker-api-versions으로 카프카브로커와 통신하려고 했는데 runtime exception이 남
@@ -391,3 +401,63 @@ $ - 문장 맨 뒤로 이동
 I - 현재 라인 맨앞넣기
 A - 라인 맨뒤넣기
 O,o - 윗줄 아랫줄에 insert하기
+
+-------------------------------
+
+
+HAN SANG HA[ 한상하 ]님이 작성, 7월 02, 2021에 최종 변경메타 데이터의 시작으로 이동
+kafka의 탄생 배경
+
+아마 가장 일반적인 통신 아키텍쳐는 위 그림과 같이 Server-Client 모델 일 것이다.
+
+
+
+그러나 시스템이 성장함에 따라 다양한 데이터의 흐름이 필요할 경우 복잡도가 높아져 유지보수에 있어서 굉장히 힘들어 진다.
+
+
+위 그림과 같이 카프카는 파편화된 데이터 파이프라인의 복잡도를 낮추고, 데이터 흐름을 개선하기위해 링크드인의 데이터 팀에서 개발되었다.
+
+
+kafka의 기본 개념
+앞에 나온 kafka diagram을 좀 더 자세히 살펴보자
+
+(1) 에서 Producer는 누가 데이터를 읽는 지 신경쓰지 않고 데이터를 topic으로 보낸다.
+(2) 의 토픽이란 카프카 클러스터에서 데이터를 실질적으로 저장한다. 데이터베이스의 tables 와 유사한 목적으로 사용된다.
+(3) Consumer는 하나 이상의 토픽에서 데이터를 읽거나 구독하는 프로세스이다. 직접 producer와 통신하지 않는 것이 주요한 개념이다. 오직 관심사는 Topic이다.
+(4) 에서와 같이 Consumer는 Group으로 묶여 함께 작업할 수 있다. (Consumer Group)
+
+
+
+
+카프카의 특징
+위 그림에서 토픽은 아래처럼 여러개의 파티션으로 나눠 질 수 있다.
+
+
+consumer 생성후 파티션에서 레코드를 읽어가면 읽은 부분까지 offset 을 kafka 서버에 기록(commit)한다.
+
+
+
+또한 카프카 broker(실질적 app이 깔린 서버) 여러대를 구성하여 카프카 클러스터를 구성 할 수 있다.
+카프카 클러스터를 구성하고, replication 설정을 통해 고가용성을 위한 설계를 할 수도 있다. 
+
+
+(Broker 3대를 이용하여 클러스터 구성 후 3개의 파티션에 replication factor 2를 지정하였을 경우 브로커별 데이터의 저장모습)
+
+
+
+이외에도 영속성 등의 특징을 갖는다.
+용어 정리
+Broker : 카프카 애플리케이션 서버 단위
+Topic : 데이터 분리 단위. 다수 파티션 보유
+Partition : 레코드 저장소. 컨슈머 요청시 레코드 전달
+Record : 프로듀서가 생성하는 데이터. 타임스탬프, 메세지키, 메시지값, 오프셋으로 구성됨.
+Offset : 각 레코드당 파티션에 할당된 레코드 고유 번호
+Consumer : 레코드를 가져가는(polling) 애플리케이션
+Consumer group : 다수 컨슈머 묶음
+Consumer offset : 특정 컨슈머가 가져간 레코드의 번호
+Producer : 레코드를 브로커로 전송하는 레코드 저장 애플리케이션
+Replication : 여러개의 브로커를 구성하고, 레플리케이션을 설정하면 브로커별로 파티션을 나누어 복제본을 저장한다. (고가용성)
+
+
+
+
