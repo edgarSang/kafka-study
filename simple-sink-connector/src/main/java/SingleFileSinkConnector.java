@@ -15,11 +15,11 @@ public class SingleFileSinkConnector extends SinkConnector {
 
     @Override
     public String version() {
-        return "1.0";
+        return "1.1";
     }
 
     @Override
-    public void start(Map<String, String> props) {
+    public void start(Map<String, String> props) {ㅎ
         this.configProperties = props;
         try {
             new SingleFileSinkConnectorConfig(props);
