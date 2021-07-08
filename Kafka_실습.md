@@ -460,4 +460,82 @@ Replication : 여러개의 브로커를 구성하고, 레플리케이션을 설�
 
 
 
+-------------------
+# Mastering Kafka Streams 
+
+### 도마뱀은 팁이다
+### 새는 일반적인 참고사항
+### 전갈은 주의사항
+
+
+## Ch1 A Rapid Introduce to Kafka
+---
+- 가장 중요한것은 카프카의 PUB-SUB 모델은 양방향이 아니란 것이다. 즉 스트림은 한방향으로만 흐른다.
+- 시스템이 일부 데이터를 Kafka 토픽으로 생성하고 다른 시스템에 의존하여 데이터로 무언가를 수행하는 경우, enriched된 데이터는 다른토픽에 씌워져야한다.
+
+
+### How Are Streams Stored?
+- 링크드인 개발자들은 이런 물음에 빠졌다 - 묵여있지않고 지속적으로 계속되는 데이터는 어느 데이터 레이어에 모델링되어야할까?
+- 데이터베이스, 키벨류스토어 vcs등등 다양하게 생각해보았지만, 커밋로그는 매우 파워풀하고 간단한 추상화였다.
+- 커밋로그는 어플리케이션 로그가 아니라 실행중인 프로세스에 대한 정보를 내보냅니다.
+- 유저 구매목록이란 로그를 만들어보고 아래에서 커맨드를 통해 추출해보자
+
+- user 1이 구매를하면, 첫번째 커밋로그를 업데이트 하는것이아닌, 계속헤서 append gksms gudtlrdlqlsek.
+
+### Topics and Partitions p9
+- 따라서 로그를 배포하고 처리하는 방식으로 일정 수준의 병렬 처리를 달성하려면 로그를 많이 만들어야합니다. 이것이 Kafka 주제가 파티션이라고하는 더 작은 단위로 분리되는 이유입니다.
+- 주어진 주제에 대한 파티션 수는 구성 가능하며, 한 주제에 더 많은 파티션이 있으면 일반적으로 더 많은 병렬 처리 및 처리량으로 변환됩니다.
+- 토픽 파티션에 정확히 무엇이 저장될까요? 다음 주제로아랑봅시다.
+
+### Events p11
+- 물론 카프카 토픽 처리에 대한 얘기를 많이하지만, 토픽내부에 어떤 데이터가 저장되는지 이해하는것도 중요하다.
+- 많은 문서에서 Evnets, 메세지, 레코드라고 다양하게 묘사한다. 책에서는 이벤트라 표현할것이다.
+- 이벤트는 타임스탬프가 포함된 키밸류 기록이다.
+- 키는 선태사항이지만, 파티션에 분산되는 방시겡 중요한 역할을 한다.
+- value에는 바이트 배열로 인코딩된 실제내용이 포함됨.
+
+### Kafka Cluster and Brokers p12
+
+
+### Hello, kafka p16
+```bash
+kafka-topics \
+ --bootstrap-server broker01:9092 \
+ --create \
+ --topic users \
+ --partitions 4 \
+ --replication-factor 1
+```
+
+
+```bash
+kafka-topics \
+ --bootstrap-server broker01:9092 \
+ --describe \
+ --topic users
+
+```
+
+- 몇가지 데이터를 생산해보자
+
+```bash
+kafka-console-producer \
+ --bootstrap-server broker01:9092 \
+ --property key.separator=, \
+ --property parse.key=true \
+ --topic users
+
+```
+
+- 컨슈머를 통해 가져와보자
+```bash
+kafka-console-consumer \
+ --bootstrap-server localhost:9092 \
+ --topic users \
+ --from-beginning
+```
+
+
+
+
 
