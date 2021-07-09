@@ -46,8 +46,8 @@ java -version
 
 ## 주키퍼 카프카 브로커 실행
 ```bash
-wget https://archive.apache.org/dist/kafka/2.5.0/kafka_2.12-2.5.0.tgz
-tar xvf kafka_2.12-2.5.0.tgz
+wget https://archive.apache.org/dist/kafka/2.7.0/kafka_2.12-2.7.0.tgz
+tar xvf kafka_2.12-2.7.0.tgz
 ```
 
 
@@ -473,6 +473,7 @@ Replication : 여러개의 브로커를 구성하고, 레플리케이션을 설�
 - 가장 중요한것은 카프카의 PUB-SUB 모델은 양방향이 아니란 것이다. 즉 스트림은 한방향으로만 흐른다.
 - 시스템이 일부 데이터를 Kafka 토픽으로 생성하고 다른 시스템에 의존하여 데이터로 무언가를 수행하는 경우, enriched된 데이터는 다른토픽에 씌워져야한다.
 
+- commit Log -> append only 삭제의 개념은 없음, 각 record는 immutable 하다
 
 ### How Are Streams Stored?
 - 링크드인 개발자들은 이런 물음에 빠졌다 - 묵여있지않고 지속적으로 계속되는 데이터는 어느 데이터 레이어에 모델링되어야할까?
@@ -535,6 +536,124 @@ kafka-console-consumer \
  --from-beginning
 ```
 
+-기본적으로 카프카 컨슈머는 키와 벨류만 표시함, 여러가지 프로퍼티와 같이 보내보자
+```bash
+./kafka-console-consumer.sh \
+ --bootstrap-server broker01:9092 \
+ --topic users \
+ --property print.timestamp=true \
+ --property print.key=true \
+ --property print.value=true \
+ --from-beginning
+```
+
+- Summary
+ - 카프카 커뮤니케이션 모델은 여러시스템의 커뮤니케이션을 빠르고 지속가능하고, 스토리지레이어에 의존적으로 쉽게 만들어준다.
+ - 클러스터를 구성함으로써, 고가용성 내결함성을 구성할 수 있다.
+
+
+
+## Ch2 Getting Started With Kafka Streams
+- 더 이상 고민하지 않고, 다음과 같은 은유적 질문으로 챕터를 시작하겠다. 카프카 스트림 어디에 살고있니?
+- 1장에서 말한 핵심은 추가되는 커밋로그 이다.
+- 즉, 핵심 Kafka 코드베이스에는이 로그와 상호 작용하기위한 몇 가지 중요한 API가 포함되어 있다 (이것은 메세지와 카테고리로 분류된 토픽).
+  - Producer API, 메시지를 카프카 토픽에씀
+  - Consumer API, 메세지를 토픽으로부터 읽음
+  - Connect API , 외부 데이터 저장소, API, 파일시스템 등과 카프카 토픽을 연동함.
+
+
+### Before Kafka Stream p24
+- 카프카 스트림이 존재하기전에는, 생태계에는 공백이 있엇다.
+- 이 공백은 스트림처리를 어렵게 만드는 공백이다.
+- 기존의 API는 다음과 같은 기본요소가 부족했다
+  - 내결함성 상태, 스트림 변환 연산자, 스트림의 표현, 정교한 시간처리
+- 또한 아파치 플링크 스파크 와같은 다른시스템을 사용하는 것이다.
+
+### Enter the kafka Streams p25
+- Producer, Consumer 및 Connect API와 달리 Kafka Streams는 실시간 데이터 스트림을 처리하는 데 전념합니다.
+- 데이터를 이동하는 것 뿐만아니라, 데이터 파이프 라인을 통해 이동할 때 이벤트의 실시간 스트림을 쉽게 소비하고 데이터를 정제한다.
+- 카프카 스트림은 생태계의 "두뇌"로서 이벤트 스트림의 레코드를 소비하고 데이터를 처리하며 선택적으로 보강되거나 변환 된 레코드를 kafka에 다시 기록합니다.
+- Kafka Streams는 Kafka 생태계의 흥미로운 계층, 즉 여러 소스의 데이터가 Covarage되는 곳에서 작동합니다.
+
+### Features at a Glance p27
+- Kafka Streams는 최신 스트림 처리 응용 프로그램에 탁월한 선택이되는 많은 기능을 제공합니다. 
+  - Java의 스트리밍 API처럼 보이고 느껴지는 고급 DSL
+  - 개발자가 필요할 때 세밀한 제어를 제공하는 저수준 프로세서 API
+  - 데이터를 스트림 또는 테이블로 모델링하기위한 편리한 추상
+  - 데이터 변환 및 보강에 유용한 스트림과 테이블을 조인하는 기능
+  - 확장 성, 안정성, 유지 관리 용이성
+
+### Operational Characteristics p28
+- 마틴 클램프맨의 훌륭한책, 디자인 데이터 인텐시브 어플리케이션 책에서는 다음 세가지 목표를 데이터시스템에서 제시한다.
+  - Scalability
+    - Kafka Streams의 작업 단위는 단일 토픽 파티션이고 더 많은 파티션을 추가하여 토픽을 확장 할 수 있으므로 Kafka Streams 애플리케이션이 수행 할 수있는 작업량은 소스 토픽의 파티션 수를 늘림으로써 확장 될 수 있습니다.
+    - Consumer 그룹을 활용하면 Kafka Streams 애플리케이션이 처리하는 총 작업량을 애플리케이션의 여러 협력 인스턴스에 분산시킬 수 있습니다.
+  - Reliability
+    - "Consumer 그룹"에서 이미 다루었던 것입니다. 소비자 그룹을 통한 자동 장애 조치 및 파티션 재조정입니다. p13 (소비자 그룹을 통한 자동 장애 조치 및 파티션 재조정.)
+  - Maintainability
+    - Kafka Streams는 Java 라이브러리이므로 독립 실행 형 애플리케이션으로 작업하고 있기 때문에 버그 문제 해결 및 수정이 비교적 간단하며 생태계를 통한 모니터링도 쉽다.
+
+### 타 시스템과 비교 p30
+ - Kafka Streams는 한번에 이벤트 처리를 구현하므로 마이크로 배치보다 지연시간이 짧다
+
+- Kappa Architecture (Kafka Stream)
+- 두 시스템 간의 차이점을 설명하는 한 가지 방법은 다음과 같습니다. 
+  - Kafka Streams는 스트림 관계형 처리 플랫폼입니다. 
+  - Apache Beam은 스트림 전용 처리 플랫폼입니다.
+
+
+### Processor Topologies p35
+- Kafka Streams는 프로그램을 일련의 입력, 출력 및 처리 단계로 표현하는 데이터 중심 방법 인 데이터 흐름 프로그래밍 (DFP)이라는 프로그래밍 패러다임을 활용합니다.
+- 이 장은 깊게설명하므로 45p 부터 읽고 다시방문해도 좋습니다.
+- 토폴로지란 프로그램을 일련의 단계로 빌드하는 대신 Kafka Streams 애플리케이션의 스트림 처리 논리는 방향성 비순환 그래프(DAG)로 구성됩니다.
+
+### Introducing Our Tutorial: Hello, Streams p45
+- DSL 이란 DSL(Domain Specific Language) 이다. kafka Streams DSL을 제공
+- Kafka Streams 에서 토폴로지는 노드와 '노드와 노드를 이은 선'으로 이루어져 있는데, 노드는 프로세서(Processor), 선은 스트림(Stream)을 의미합니다. 즉, 데이터를 처리하는 녀석이 노드이고 다음 노드로 넘어가는 데이터를 선이라고 보시면 될 것 같습니다.
+- 토폴로지란 데이터의 흐름을 표현하기 위해 노드와 선으로 이루어진 도식화.
+
+- 참고 스트림즈의 구성요소
+  - 소스 프로세서 (Source Processor)
+	소스 프로세서는 토폴로지의 시작 노드이며,
+	데이터를 처리하기 위해 최초로 선언해야 하는 노드입니다.
+	카프카와 연결된 프로세서이며, 하나 이상의 토픽에서 데이터를 가져오는 역할을 합니다.
+
+	- 스트림 프로세서 (Stream Processor)
+ 	스트림 프로세서는 다른 프로세서(소스 프로세서, 스트림 프로세서)가 반환한 데이터를 처리하는 역할을 합니다.
+
+	- 싱크 프로세서 (Sink Processor)
+	싱크 프로세서는 토폴로지의 마지막 노드이며,
+	데이터 전달을 위해 마지막에 선언해야 하는 노드입니다.
+	카프카와 연결된 프로세서이며, 데이터를 카프카의 특정 토픽으로 저장하는 역할을 합니다.
+
+
+- 카프카 스트림즈를 구현하는 2가지 방법
+ 	1. 스트림즈 DSL
+  - 스트림즈 DSL에서는 데이터 흐름을 추상화한 3가지 개념이 있다. KStream, Ktable, GlobalKtable이다.
+  - Kstream은 데이터가 AppendLog 뒤에 추가된것도 모두 출력된다. Key의 중복을 허용
+  - Ktable에서는 Key가 동일한경우에는 최신데이터로 value를 덮어씌운다.
+  2. 프로세서 API
+  - 앞서 사용했던 추상화 개념인 Kstream, Ktable, Global KTable 모두 사용하지 않는다.
+
+  - 결론: 스트림즈를 구현하는 2가지 프로세스는 결국 어떻게 구현을 하던지 간에 Source > Stream > Sink의 처리
+
+
+- 참고 : https://velog.io/@jwpark06/Kafka-%EC%8A%A4%ED%8A%B8%EB%A6%BC%EC%A6%88-%EC%95%8C%EC%95%84%EB%B3%B4%EA%B8%B0
+
+
+
+
+### Streams And Table p57
+- 스트림과 Table은 자바로 비교했을때 List 와 Map으로 비교하면 이해하기 쉽다. 리스트는 시계열 데이터를 저장할 수 있지만, 그 리스트의 요소를 맵으로 저장하면 키값에 따라 업데이트를 시킴
+
+### Kstream, Ktable, GlobalKatable 
+- KStream KStream은 데이터가 삽입 의미론을 사용하여 표현되는 분할된 레코드 스트림의 추상화입니다(즉, 각 이벤트는 다른 이벤트와 독립적인 것으로 간주됨)
+- KTable은 파티셔닝된 테이블의 추상화 이다.
+- GlobalKTable 이것은 각 GlobalKTable에 기본 데이터의 완전한(즉, 분할되지 않은) 사본이 포함되어 있다는 점을 제외하고는 KTable과 유사합니다. 
+
+
+0. 우리쪽 키는 상품 아이디로 사용한다.
+1. 궁금한점 토폴로지 설명에서처럼 소스 프로세서 -> 스트림 프로세서 -> 싱크 프로세서 이 3개는 무조건 있어야하는 필수요소 일까? (가끔 궁금할때 라인쇼핑 아키텍쳐를 보는데 3요소가 이루어진것같지않다.)
 
 
 
