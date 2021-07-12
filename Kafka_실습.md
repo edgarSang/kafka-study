@@ -690,11 +690,13 @@ kafka-console-consumer \
 	6. 각 트윗에는 트위터 사용자가 특정 디지털 통화에 대해 감정 점수가 포함되어야 합니다. 단일 트윗에 여러 암호화폐가 언급될 수 있으므로 flatMap 연산자를 사용하여 각 입력(트윗)을 가변 수의 출력으로 변환하는 방법을 보여줍니다.
 	7. 정제된 트윗은 crypto-sentiment라는 topic에 저장.
 
-### Project Setup
+### Adding a KStream Source Processor
+- Kstream 은 인터페이스이다. byte[] 를 k,v 인자로 줄경우
+	- 트윗 주제에서 나오는 레코드 키와 값이 바이트 배열로 인코딩됨을 나타냅니다.
 
 
 
-
+### Building a Custom Serdes 
 
 
 
