@@ -361,46 +361,7 @@ curl -X DELETE http://localhost:8083/connectors/local-file-source
 curl -X GET http://localhost:8083/connectors/
 ```
 
--------
-# TROUBLE Shooting
-1.로컬에서 kafka-broker-api-versions으로 카프카브로커와 통신하려고 했는데 runtime exception이 남
-- security group에서 inbound 9092 포트열어줌
 
-2.카프카 클러스터구성후 실행시 이미 한번 카프카실행했던 01번 브로커에서 clusterId가 meta 파일과 일치하지 않는다고 나옴
-해결방법 : 
-카프카 설정파일(카프카 설치 디렉토리/config/server.properties)의 log.dirs 항목에서 설정되어 있는 카프카 로그 path로 가보면 meta.properties라는 파일이 있는데 해당 파일을 지워주고 카프카를 재시작해주면 해결된다.
-카프카 설치 디렉토리/config/server.properties 파일 
-
-3.클러스터 구성시에 streams로 topic을 복사를하니 브로커01에는 절대로 복사가 되지않았다 스트림즈는 어디로복사를하게될까?
-
-
-# 궁금점.
-1.record의 키값을 붙여서 보내면 같은 파티션으로 저장되게 되는데, 이것의 의미는 무엇일까? 단순히 column - value 느낌은 아닌것 같다. (처음에 key라는게 column 이라고 생각)
-
-
-* iterm 단축키
-Cmd + d 화면세로분할
-Cmd + shift + d 가로분할
-Cmd + w 탭 닫기
-Cmd + / 탭분할시 포커스 찾기
-Cmd + , 탭분할시 포커스 이동
-Cmd + shift + h 클립보드
-Cmd + ; 자동완성
-Cmd + shift + e 작업시간보여주기
-Cmd + shift + i 여러창 동시입력
-Ctrl + u , k line delete k는 뒷라인 제거
-Ctrl + a , e 커서 맨앞 맨뒤
-command+shift+option 드래그 다시 탭바합치기
-option+cmd+i 멀티인풋
-ctrl+cmd+shi+op+i 현재 커서 멀티인풋제외
-
-* vi 단축키
-^ - 문장 맨 앞으로 이동
-0 - 라인 맨 앞으로 이동
-$ - 문장 맨 뒤로 이동
-I - 현재 라인 맨앞넣기
-A - 라인 맨뒤넣기
-O,o - 윗줄 아랫줄에 insert하기
 
 -------------------------------
 
@@ -700,6 +661,14 @@ kafka-console-consumer \
 
 
 
+### Defining Data Classes
+- 사용하지 않는 필드를 Pojo 데이터에 추가하지 않는 것을 projection 이라고하며 Select 문과 유사하다.
+
+
+### Tweet pojo Serializer, DeSerializer with Gson
+
+### Building the Tweet Serdes
+- Kafka Streams가 deserializer와 serializer를 사용하기위해 Wraaping 하는것이 Serdes 클래스이다
 
 
 
@@ -745,7 +714,45 @@ kafka-console-consumer \
 
 
 
+-------
+# TROUBLE Shooting
+1.로컬에서 kafka-broker-api-versions으로 카프카브로커와 통신하려고 했는데 runtime exception이 남
+- security group에서 inbound 9092 포트열어줌
+
+2.카프카 클러스터구성후 실행시 이미 한번 카프카실행했던 01번 브로커에서 clusterId가 meta 파일과 일치하지 않는다고 나옴
+해결방법 : 
+카프카 설정파일(카프카 설치 디렉토리/config/server.properties)의 log.dirs 항목에서 설정되어 있는 카프카 로그 path로 가보면 meta.properties라는 파일이 있는데 해당 파일을 지워주고 카프카를 재시작해주면 해결된다.
+카프카 설치 디렉토리/config/server.properties 파일 
+
+3.클러스터 구성시에 streams로 topic을 복사를하니 브로커01에는 절대로 복사가 되지않았다 스트림즈는 어디로복사를하게될까?
+
+4.책에서 만든대로 topology에서 source stream을 읽으려는데 계속 Gson관련 오류가남 (topology가 실행되려면 토폴로지 실행후 데이터를 흘려보내줘야함)
+(.json 파일이 prettier가 실행되면서 포맷이변환되면서 생기는문제, saveaction ignore파일을추가하면됨)
+
+# 궁금점.
+1.record의 키값을 붙여서 보내면 같은 파티션으로 저장되게 되는데, 이것의 의미는 무엇일까? 단순히 column - value 느낌은 아닌것 같다. (처음에 key라는게 column 이라고 생각)
 
 
+* iterm 단축키
+Cmd + d 화면세로분할
+Cmd + shift + d 가로분할
+Cmd + w 탭 닫기
+Cmd + / 탭분할시 포커스 찾기
+Cmd + , 탭분할시 포커스 이동
+Cmd + shift + h 클립보드
+Cmd + ; 자동완성
+Cmd + shift + e 작업시간보여주기
+Cmd + shift + i 여러창 동시입력
+Ctrl + u , k line delete k는 뒷라인 제거
+Ctrl + a , e 커서 맨앞 맨뒤
+command+shift+option 드래그 다시 탭바합치기
+option+cmd+i 멀티인풋
+ctrl+cmd+shi+op+i 현재 커서 멀티인풋제외
 
-
+* vi 단축키
+^ - 문장 맨 앞으로 이동
+0 - 라인 맨 앞으로 이동
+$ - 문장 맨 뒤로 이동
+I - 현재 라인 맨앞넣기
+A - 라인 맨뒤넣기
+O,o - 윗줄 아랫줄에 insert하기
