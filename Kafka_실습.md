@@ -671,16 +671,30 @@ kafka-console-consumer \
 - Kafka Streams가 deserializer와 serializer를 사용하기위해 Wraaping 하는것이 Serdes 클래스이다
 
 
+### Filtering Data
 
 
+### Branching Data
 
 
+### Enriching Tweets p82
+- Tweet VO는 Topic의 구조를 나타냅니다. crypto-sentiment에 저장할 데이터 형식을 만들어봅시다.
+- 우리는 Avro라는 데이터 직렬화 형식을 사용할 것입니다.
 
+### Avro Data Class p83
+- Avro는 카프카 커뮤니티에서 가장 인기있고, 강력한 포맷입니다.
+- generic records or specific records 형태를 사용 할 수 있습니다.
+	1. generic records는 런타임에 레코드 스키마를 알 수 없는 경우에 적합합니다. 일반 getter 및 setter를 사용하여 필드 이름에 액세스할 수 있습니다.
+	2. specific records는 Avro 스키마 파일에서 생성된 Java 클래스입니다
 
+### Sentiment Analysis
+- flatMap 및 flatMapValues는 모두 호출될 때마다 0, 1 또는 여러 출력 레코드를 생성할 수 있습니다
+- 
 
-
-
-
+### Serializing Avro Data
+- Avro 스키마를 사용하여 serialize를 하는데에는 두가지 선택이있다.
+	1. 각 레코드에 Avro 스키마를 포함합니다. 
+	2. Avro 스키마를 Confluent Schema Registry에 저장하고 전체 스키마 대신 각 레코드에 훨씬 더 작은 스키마 ID만 포함하여 훨씬 더 간결한 형식을 사용합니다.
 
 
 
