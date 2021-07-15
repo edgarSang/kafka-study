@@ -10,9 +10,12 @@ import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Predicate;
 import org.apache.kafka.streams.kstream.Printed;
+import org.apache.kafka.streams.kstream.Produced;
 
 import com.pipelines.data.Tweet;
 import com.pipelines.data.TweetSerdes;
+import com.pipelines.data.avro.AvroSerdes;
+import com.pipelines.language.DummyClient;
 import com.pipelines.language.GcpClient;
 import com.pipelines.language.LanguageClient;
 import com.pipelines.model.EntitySentiment;
@@ -30,7 +33,15 @@ public class CryptoTopology {
     }
 
     public static Topology build() {
-        LanguageClient languageClient = new GcpClient();
+        if (System.getenv("GOOGLE_APPLICATION_CREDENTIALS") != null) {
+            return build(new GcpClient());
+        }
+
+        return build(new DummyClient());
+    }
+
+    public static Topology build(LanguageClient lc) {
+        LanguageClient languageClient = lc;
         StreamsBuilder builder = new StreamsBuilder();
         KStream<byte[], Tweet> stream =
                 builder.stream("tweets", Consumed.with(Serdes.ByteArray(), new TweetSerdes()));
@@ -62,6 +73,10 @@ public class CryptoTopology {
                                     ));
                             return results;
                         });
+
+        enriched.to("crypto-sentiment", Produced.with(
+                Serdes.ByteArray(),
+                AvroSerdes.EntitySentiment("http://broker01:18081", false)));
 
         return builder.build();
     }

@@ -34,7 +34,7 @@ zookeeper.connect=broker01:2181,broker02:2181,broker03/test
 ```bash
 cd /Users/user/Documents/dev/kaf
 chmod 400 edgar-kaf1.pem.  //파일을 I 명령어로 읽어오기위해 유저권한변경
-ssh -i edgar-kaf1.pem ec2-user@18.116.164.235
+ssh -i edgar-kaf1.pem ec2-user@3.20.238.248
 ```
 
 
@@ -697,9 +697,13 @@ kafka-console-consumer \
 	2. Avro 스키마를 Confluent Schema Registry에 저장하고 전체 스키마 대신 각 레코드에 훨씬 더 작은 스키마 ID만 포함하여 훨씬 더 간결한 형식을 사용합니다.
 
 
-
-
-
+### Adding a Sink Processor p90
+- 마지막단계는 enrich data를 crypto-sementic topic에 쓰는것이다. 이를수행하는데는 몇가지 연산자가있다.
+	1. to
+	2. through
+	3. repatition
+- 새 KStream을 반환하려면 repartition or thorugh를 호출하면 된다.
+- 스트림에서 터미널 단계에 도달했다면 기본 KStream에 다른 스트림 프로세서를 추가할 필요가 없기 때문에 void를 반환하는 to 연산자를 사용해야 합니다.
 
 
 
