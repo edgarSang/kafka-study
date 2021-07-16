@@ -11,12 +11,15 @@ public class Tweet {
 
     @SerializedName("Lang")
     private String lang;
-    
+
     @SerializedName("Retweet")
     private Boolean retweet;
 
     @SerializedName("Text")
     private String text;
+
+    @SerializedName("User")
+    private User user;
 
     public Long getCreatedAt() {
         return this.createdAt;
