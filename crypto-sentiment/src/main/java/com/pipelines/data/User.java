@@ -9,7 +9,7 @@ public class User {
     private Integer followersCount;
     private Integer friendsCount;
 
-    public Integer getUserId() {
+    public String getUserId() {
         return userId;
     }
 

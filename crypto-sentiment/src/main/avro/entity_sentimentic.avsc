@@ -30,6 +30,17 @@
     {
       "name": "salience",
       "type": "double"
+    },
+    {
+      "name": "user",
+      "type": "record",
+      "fields": [
+        {"name": "Id", "type": "string"},
+        {"name": "Name", "type": "string"},
+        {"name": "Description", "type": "string"},
+        {"name": "ScreenName", "type": "string"},
+        {"name": "URL", "type": "string"}
+      ],
     }
   ]
 }
