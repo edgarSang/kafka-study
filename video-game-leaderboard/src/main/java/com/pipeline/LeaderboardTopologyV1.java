@@ -12,8 +12,9 @@ import org.apache.kafka.streams.kstream.Printed;
 import com.pipeline.model.Player;
 import com.pipeline.model.Product;
 import com.pipeline.model.ScoreEvent;
+import com.pipeline.serialization.json.JsonSerdes;
 
-class LeaderboardTopologyVersion1 {
+class LeaderboardTopologyV1 {
     public static Topology build() {
         StreamsBuilder builder = new StreamsBuilder();
 

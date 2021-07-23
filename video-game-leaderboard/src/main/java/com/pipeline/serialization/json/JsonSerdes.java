@@ -3,6 +3,7 @@ package com.pipeline.serialization.json;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 
+import com.pipeline.HighScores;
 import com.pipeline.model.Player;
 import com.pipeline.model.Product;
 import com.pipeline.model.ScoreEvent;
