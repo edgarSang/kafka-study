@@ -1,12 +1,12 @@
 Kafka 실습
 ## 기본정보
-1. kaf1 public - 18.116.164.235
+1. kaf1 public - 3.20.238.248
 2. kaf2 18.188.11.200
 3. kaf3 52.14.217.250
 
 ## 카프카 세대 클러스터링
 
-18.116.164.235 broker01
+3.20.238.248 broker01
 18.188.11.200 broker02 
 52.14.217.250 broker03
 
@@ -92,9 +92,9 @@ tail -f logs/server.log
 ## 2.1.5 로컬 컴퓨터에서 카프카와 통신 확인
 - 로컬 컴퓨터에 카프카 바이너리패키지를 다운로드받아 kafaka-broke-api-version.sh 명령어를 로컬에서 실행해보자
 ```bash
-curl https://archive.apache.org/dist/kafka/2.5.0/kafka_2.12-2.5.0.tgz --output kafka.tgz
+curl https://archive.apache.org/dist/kafka/2.7.0/kafka_2.12-2.7.0.tgz --output kafka.tgz
 tar -xvf kafka.tgz
-bin/kafka-broker-api-versions.sh --bootstrap-server 18.116.164.235:9092
+bin/kafka-broker-api-versions.sh --bootstrap-server broker01:9092
 ```
 
 ## 테스트 편의를 위한 hosts 설정
@@ -704,6 +704,154 @@ kafka-console-consumer \
 	3. repatition
 - 새 KStream을 반환하려면 repartition or thorugh를 호출하면 된다.
 - 스트림에서 터미널 단계에 도달했다면 기본 KStream에 다른 스트림 프로세서를 추가할 필요가 없기 때문에 void를 반환하는 to 연산자를 사용해야 합니다.
+
+
+
+
+
+## CH4 Stateful Processing
+
+### Benefits of Stateful Processing 96p
+
+### preview of stateful operators
+	1. join
+	- 별도의 스트림 또는 테이블에 캡처된 추가 정보 또는 컨텍스트로 이벤트를 강화합니다.
+	2. aggregating data 
+	- 관련 이벤트의 지속적으로 업데이트되는 수학적 또는 조합 변환을 계산합니다.
+	3. windowing data
+	- 시간적으로 가까운 그룹 이벤트(파티셔닝 테이블을 생각해보자)
+
+### state stores
+- 상태저장 작업을 지원하려면, 필요한 기억된 데이터 또는 상태를 저장하고 검색하는 방법이 필요합니다.
+- Kafka Streams에서 이러한 요구 사항을 해결하는 저장소 추상화를 State Store 라고 함
+
+
+### Common Chracteristics
+- Kafka Streams에 포함된 기본 상태 저장소 구현은 몇 가지 공통 속성을 공유합니다.
+1. Embedded
+	- 네트워크 호출이 불필요하므로 불필요한 대기 시간과 처리 병목 현상이 발생안함.
+	- 모든 state store는 기본적으로 RocksDB 를 사용한다. facebook에서 개발된 빠르내장형 키값저장소
+2. Multiple access modes
+	- 상태 저장소는 여러 액세스 모드와 쿼리 패턴을 지원합니다.
+3. Fault tolerant
+	- 오류가 발생한 경우 기본 changelog topic에서 개별 이벤트를 재생하여 응용 프로그램 상태를 재구성하여 상태 저장소를 복원할 수 있습니다.
+4. key-based
+	- 상태 저장소를 활용하는 작업은 키 기반입니다. 레코드의 키는 현재 이벤트와 다른 이벤트 간의 관계를 정의합니다.
+
+### Persistent Versus In-Memory Stores 101p
+- Persistent 장점
+	1. 상태가 사용 가능한 메모리 크기를 초과할 수 있습니다
+	2. 장애가 발생한 경우 영구 저장소는 인메모리 저장소보다 빠르게 복원할 수 있습니다.
+- 단점
+	1. 운영상복잡
+	2. 인메모리보다 느릴수 있음
+
+- 인메모리 저장소의 성능향상이 생각보다 drastic 않을수 있다. (장애복구가 더오래걸리기 때문에)
+
+
+### Introducing Our Tutorial: Video Game Leaderboard p102
+1. 1tier
+	- score-event 주제에는 게임 점수가 포함됩니다. 레코드는 키가 없으므로 주제 파티션 전체에 라운드 로빈 방식으로 배포됩니다. 
+	- 선수 주제에는 선수 프로필이 포함되어 있습니다. 각 레코드는 플레이어 ID로 키가 지정됩니다. 
+	- 제품 항목에는 다양한 비디오 게임에 대한 제품 정보가 포함되어 있습니다. 각 레코드는 제품 ID로 키가 지정됩니다.
+
+2. 2tier
+	- 자세한 플레이어 정보로 점수 이벤트 데이터를 보강해야 합니다. 조인을 사용하여 이를 수행할 수 있습니다.
+
+3. 3tier
+	- 플레이어 데이터로 점수 이벤트 데이터를 보강했으면 결과 스트림에 자세한 제품 정보를 추가해야 합니다. 이는 조인을 사용하여 수행할 수도 있습니다.
+
+4. 4tire 
+	- 데이터를 그룹화하는 것은 집계의 전제 조건이므로 강화된 스트림을 그룹화해야 합니다.
+
+5. 5tier
+	- 각 게임의 상위 3개 최고 점수를 계산해야 합니다. 이를 위해 Kafka Streams의 집계 연산자를 사용할 수 있습니다.
+
+6. 6tier
+	- 마지막으로 각 게임의 최고 점수를 외부에 공개해야 합니다. Kafka Streams의 대화형 쿼리 기능을 사용하여 RESTful 마이크로서비스를 구축함으로써 이를 달성할 것입니다.
+
+
+### data modeling
+1. ScoreEvent.java 데이터 클래스는 score-event topic 레코드를 나타내는 데 사용됩니다. 
+2. Player.java 데이터 클래스는 playes topic 레코드를 나타내는 데 사용됩니다. 
+3. Product.java 데이터 클래스는 products topic 레코드를 나타내는 데 사용됩니다.
+
+
+### Adding the Source Processors
+- 총세개의 topic을 읽을것이기때문에 3개의 source processor가 필요하다. 지금까지는 Kstream만 사용해왔다.
+- 우리 토폴로지에서는 제품과 플레이어 topic을 모두 조회로 사용해야하므로 테이블과 같은 추상화가 이러한 주제에 적합할 수 있다는 좋은 표시입니다 
+- Kafka Streams 추상화에 매핑하기 시작하기 전에 먼저 Kafka 주제의 KStream, KTable 및 GlobalKTable 표현 간의 차이점을 검토합니다.
+	1. kstream
+	- 하나 이상의 데이터 소스에 mutable(가변) 테이블 semantics(의미)가 필요하지 않을 때 KTable 또는 GlobalKTable과 함께 stateless KStream을 사용하는 것도 매우 일반적입니다.
+  - 테이블은 키 기반이므로 키가 없는 score event topic에 대해 KStream을 사용해야 한다는 강력한 표시입니다. (앞서 스코어 이벤트토픽은 키없이 라운드로빈방식으로 배포된다고 설명됨)
+  - 게다가, 우리 애플리케이션은 최신 점수가 아니라 각 플레이어의 최고 점수에 관심을 갖기 때문에 테이블 의미없다.
+
+  2. Ktable
+  - 플레이어 topic는 플레이어 프로필을 포함하는 압축된 주제이며 각 레코드는 플레이어 ID로 키가 지정됩니다
+  - 플레이어의 최신 상태에만 관심이 있기때문에 Table기반 추상화가 좋다.
+  - 키스페이스가 매우 크거나(즉, 높은 카디널리티/많은 고유 키를 가짐) 매우 큰 키스페이스로 성장할 것으로 예상되는 경우 Ktable
+  - Table 또는 Global KTable 중에서 선택할 때 더 중요한 고려 사항은 시간 동기화 처리가 필요한지 여부입니다
+  - 타임스탬프를 보고 다음에 처리할 레코드를 결정합니다 반면에 GlobalKTable은 시간 동기화되지 않으며 "처리가 완료되기 전에 완전히 채워집니다." .
+  - [그림] 여러 애플리케이션 인스턴스에 걸쳐 상태를 분할하고 시간 동기화 처리가 필요한 경우 KTable을 사용해야 합니다.
+
+  3. Global KTable
+  - product ID에 대해 최신기록을 유지해야하므로 player topic과 유사하다.
+  - 제품 주제는 플레이어 주제보다 훨씬 더 낮은 카디널리티를 가지며, 이는 인메모리에 들어갈만큼 충분히 작은 공간을 차지합니다.
+  - 제품 주제의 데이터는 더 작을 뿐만 아니라 상대적으로 정적입니다.
+  - [그림] co-partioning을 피하며.  및 시간 동기화가 필요하지 않은 경우에 사용해야 합니다.
+
+
+### joins p111
+- 따라서 단순 병합 작업은 병합되는 이벤트에 대한 추가 컨텍스트가 필요하지 않으므로 상태 비저장입니다.
+- 관계형 시스템과 마찬가지로 Kafka Streams는 여러 종류의 조인을 지원합니다
+1. inner join
+	- 조인 내부 조인. 조인의 양쪽에 있는 입력 레코드가 동일한 키를 공유하면 조인이 트리거됩니다.
+2. left join
+	- 스트림 테이블 조인의 경우: 조인의 왼쪽에 있는 레코드가 수신될 때 조인이 트리거됩니다. 조인의 오른쪽에 동일한 키를 가진 레코드가 없으면 오른쪽 값이 null로 설정됩니다.
+	- 스트림 스트림 및 테이블 테이블 조인의 경우: 스트림 스트림 왼쪽 조인과 의미가 동일하지만 조인의 오른쪽에 있는 입력도 조회를 트리거할 수 있다는 점을 제외하고는 다릅니다. 오른쪽이 조인을 트리거하고 왼쪽에 일치하는 키가 없으면 조인은 결과를 생성하지 않습니다.
+3. outer join
+	- 조인의 양쪽에 있는 레코드가 수신되면 조인이 트리거됩니다. 조인의 반대쪽에 동일한 키를 가진 일치하는 레코드가 없으면 해당 값이 null로 설정됩니다.
+	참고 URL : https://m.blog.naver.com/syam2000/222158302362
+
+
+### 까마귀 scoreEvents는 조인의 왼쪽입니다. 플레이어는 조인의 오른쪽입니다.
+
+
+### Join Types
+- 지금은 Co-partitioning 실제로 조인을 수행하는 데 필요한 추가 요구 사항 집합이라는 것을 이해하는 것으로 충분합니다.
+
+이 장에서 수행해야 하는 두 가지 유형의 조인은 다음과 같습니다. 
+- KStream-KTable은 스코어 이벤트에 조인합니다. KStream 및 플레이어 KTable 
+- KStream-GlobalKTable은 이전 조인의 출력을 제품 GlobalKTable과 조인합니다.
+- 첫 번째 조인(KStream-KTable)에서 공동 분할이 필요함을 알 수 있습니다.
+
+### Co-partitioning
+- stream의 selectKey를 이용하여 rekeying 작업을해서 파티션에 재분배하는것
+- 이유는 Kstream을 조인을 할때 파티션이 같을때만 조인이된다. 그러므로 Co-Patitioning이 필요하다
+- ##궁금점, sink processor가 따로연결되어 있지않은데 한다고해서 topic이 co-partitioning이 되는것일까?
+- GlobalKtable에서 글로벌이란 전체파티션을 본다는 의미의 Global이다.
+
+
+### Summary
+- Kafka Streams가 consume하는 이벤트(토픽)에 대한 정보를 캡처하는 방법과 기억된 정보(state)를 활용하여 다음을 포함한 고급 스트림 처리 작업을 수행하는 방법을 배웠습니다.
+	1. join Kstream - Ktable
+	2. join type 타입에따라 코파티셔닝을 하기위한 Rekying message (score-events -> players)
+	3. join Kstream - Global Table (withPlayyes -> withProducts)
+	4. 집계를 위해 데이터를 준비하기 위해 레코드를 중간 표현(KGroupedStream, KGroupedTable)으로 그룹화 (해서 materilize에 state 저장)	(groupBy를 사용하는 것은 selectKey를 사용하여 스트림을 다시 입력하는 프로세스와 유사합니다)
+	5. aggregation 스트림 과 테이블
+	6. 대화형 쿼리를 사용하여 로컬 및 원격 쿼리를 모두 사용하여 애플리케이션 state 노출
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
