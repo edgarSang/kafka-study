@@ -845,12 +845,18 @@ kafka-console-consumer \
 
 
 
+# chapter 5 Windows and Time
 
-
-
-
-
-
+### 이번 장이 끝나면 알수 있는 것들
+- 이벤트 시간, 수집 시간 및 처리 시간의 차이점 
+• 이벤트를 특정 타임스탬프 및 시간 의미와 연결하기 위한 사용자 지정 타임스탬프 추출기를 구축하는 방법 
+• 시간이 Kafka Streams를 통한 데이터 흐름을 제어하는 방법 
+• 지원되는 창 유형 Kafka Streams에서 
+• Window Join을 수행하는 방법 
+• Window aggregations를 수행하는 방법 
+• 지연 및 비순차 이벤트를 처리하는 데 사용할 수 있는 전략 
+• 창의 최종 결과를 처리하기 위해 억제 연산자를 사용하는 방법 
+• 쿼리하는 방법 Windowed된 키-값 저장소에
 
 
 

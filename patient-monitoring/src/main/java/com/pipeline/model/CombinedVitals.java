@@ -1,4 +1,4 @@
-package com.pipeline;
+package com.pipeline.model;
 
 public class CombinedVitals {
     private final int heartRate;

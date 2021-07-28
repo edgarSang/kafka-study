@@ -1,4 +1,4 @@
-package com.pipeline;
+package com.pipeline.model;
 
 public class Pulse implements Vital {
     private String timestamp;
